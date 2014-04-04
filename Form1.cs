@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,6 +44,33 @@ namespace ImageDownloader
             else
             {
                 Debug.Fail(e.Error.Message);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            pictureBox1.Image = null;
+            string filePath = Path.GetTempPath() + Path.PathSeparator + Path.GetFileName(textBox1.Text);
+            FileDownloader fileDownloader = new FileDownloader(textBox1.Text, filePath);
+            fileDownloader.LoadCompleted += fileDownloader_LoadCompleted;
+            fileDownloader.LoadProgressChanged +=fileDownloader_LoadProgressChanged;
+            fileDownloader.DownloadAsync();
+        }
+
+        private void fileDownloader_LoadProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            label1.Text = e.ProgressPercentage.ToString();
+        }
+
+        private void fileDownloader_LoadCompleted(object sender, AsyncCompletedEventArgs e)
+        {
+            if (e.Error == null)
+            {
+                string filePath = (string)e.UserState;
+                using(FileStream fs = new FileStream(filePath, FileMode.Open,FileAccess.Read))
+                {
+                    pictureBox1.Image = Image.FromStream(fs);
+                }
             }
         }
     }

@@ -13,9 +13,10 @@ using System.Windows.Forms;
 
 namespace ImageDownloader
 {
-    public  class ImageDownloader 
+    public  class FileDownloader 
     {
-        string url;
+        private string url;
+        private string filePath;
         private long contentLength;
         private long totalBytesRead;
         private Stream tempDownloadStream;
@@ -24,11 +25,16 @@ namespace ImageDownloader
         private AsyncOperation currentAsycLoadOperation = null;
         private SendOrPostCallback loadCompletedDelegate = null;
         private SendOrPostCallback loadProgressDelegate = null;
-       
 
-        public ImageDownloader(string url)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="filepath">输入文件路径</param>
+        public FileDownloader(string url, string filepath)
         {
             this.url = url;
+            this.filePath = filepath;
         }
 
         public void DownloadAsync()
@@ -41,7 +47,7 @@ namespace ImageDownloader
                 loadProgressDelegate = new SendOrPostCallback(LoadProgressDelegate);
                 readBuffer = new byte[readBlockSize];
             }
-            tempDownloadStream = new MemoryStream();
+            tempDownloadStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write);
 
             WebRequest req = WebRequest.Create(url);
             (new WaitCallback(BeginGetResponseDelegate)).BeginInvoke(req, null, null);
@@ -76,15 +82,7 @@ namespace ImageDownloader
             if (!e.Cancelled && e.Error == null)
             {
                 //successful completion
-                try
-                {
-                    Image img = Image.FromStream(tempDownloadStream);
-                    e = new AsyncCompletedEventArgs(e.Error, e.Cancelled, img);
-                }
-                catch (Exception error)
-                {
-                    e = new AsyncCompletedEventArgs(error,false, null);
-                }
+                 e = new AsyncCompletedEventArgs(e.Error, e.Cancelled, filePath);
             }
             tempDownloadStream.Close();
             tempDownloadStream = null;
@@ -155,7 +153,6 @@ namespace ImageDownloader
                     Stream rs = responseStream;
                     responseStream = null;
                     rs.Close();
-                    
                 }
             }
             catch (Exception error)
